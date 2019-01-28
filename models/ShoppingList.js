@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+const itemSchema = require('Item');
+
 const ShoppingListSchema = new Schema({
     name: {
         type: String,
@@ -19,12 +21,7 @@ const ShoppingListSchema = new Schema({
         ]
     },
     items: {
-        type: [
-            {
-                item: Schema.Types.ObjectId,
-                ref: 'items'
-            }
-        ]
+        type: [itemSchema]
     },
     published: {
         type: Date,

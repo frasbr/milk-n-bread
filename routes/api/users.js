@@ -10,6 +10,7 @@ const crypto = require('crypto');
 // Load DB models
 const User = require('../../models/User');
 const FriendRequest = require('../../models/FriendRequest');
+const ShoppingList = require('../../models/ShoppingList');
 
 // Load validation
 const isEmpty = require('../../validation/isEmpty');
@@ -129,10 +130,40 @@ router.delete(
     '/current',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        // Find lists authored by the user
-        // Delete all items on the list
-        // Delete the list
-        // Then delete the
+        ShoppingList.find({
+            author: req.user.id
+        })
+            .then(lists => {
+                if (lists && lists.length > 0) {
+                    lists.forEach(list => {
+                        list.remove();
+                    });
+                }
+            })
+            .then(() => {
+                FriendRequest.find({
+                    participants: req.user.id
+                }).then(requests => {
+                    if (requests && requests.length > 0) {
+                        requests.forEach(request => {
+                            request.remove();
+                        });
+                    }
+                });
+            })
+            .then(() => {
+                User.findByIdAndDelete(req.user.id).then(() => {
+                    res.json({
+                        success: 'User successfully deleted'
+                    });
+                });
+            })
+            .catch(err => {
+                console.log(err);
+                res.status(500).json({
+                    serverError: 'Something went wrong'
+                });
+            });
     }
 );
 
