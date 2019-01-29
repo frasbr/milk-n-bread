@@ -15,8 +15,12 @@ const ItemSchema = new Schema({
         required: true
     },
     purchasedBy: {
-        type: Schema.Types.ObjectId,
-        ref: 'users'
+        type: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'users'
+            }
+        ]
     }
 });
 

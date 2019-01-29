@@ -8,11 +8,15 @@ const ShoppingListSchema = new Schema({
         type: String,
         required: true
     },
+    description: {
+        type: String
+    },
     author: {
         type: Schema.Types.ObjectId,
-        ref: 'users'
+        ref: 'users',
+        required: true
     },
-    admins: {
+    contributors: {
         type: [
             {
                 type: Schema.Types.ObjectId,
