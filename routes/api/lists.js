@@ -10,9 +10,7 @@ const ShoppingList = require('../../models/ShoppingList');
 // Load validation
 const isEmpty = require('../../validation/isEmpty');
 
-// TODO:
 // Routes
-
 // @route   POST /create
 // @desc    Create a new ShoppingList
 // @access  Private
@@ -32,6 +30,8 @@ router.post(
             author: req.user.id
         });
 
+        newList.contributors.push(req.user.id);
+
         newList
             .save()
             .then(list => res.json(list))
@@ -42,8 +42,107 @@ router.post(
     }
 );
 
-//update/:list
+// @route   POST /:list_id/addItem
+// @desc    Add a new item to a ShoppingList
+// @access  Private - Restricted to ShoppingList.contributors
+router.post(
+    '/:list_id/addItem',
+    passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+        // Validate form input
+        // Validate req.params.list_id
 
+        ShoppingList.findById(req.params.list_id).then(list => {
+            // Check if query returned an instance
+            if (!list) {
+                res.status(404).json({
+                    noList: 'No list found with that id'
+                });
+                return;
+            }
+
+            // Check if user belongs to shopping list provided
+            if (
+                !list.contributors
+                    .map(user => user.toString())
+                    .contains(req.user.id)
+            ) {
+                res.status(401).json({
+                    Unauthorised:
+                        'You do not have permission to edit this shopping list'
+                });
+                return;
+            }
+
+            const newItem = {
+                name: req.body.name
+            };
+
+            if (req.body.quantity) {
+                newItem.quantity = req.body.quantity;
+            }
+
+            list.items.unshift(newItem);
+
+            list.save()
+                .then(list => res.json(list))
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        serverError: 'Something went wrong'
+                    });
+                });
+        });
+    }
+);
+
+// @route   POST /:list_id/removeItem/:item_id
+// @desc    Remove an item from a ShoppingList
+// @access  Private - Restricted to ShoppingList.contributors
+router.post(
+    '/:list_id/removeItem/:item_id',
+    passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+        // Validate form input
+        // Validate req.params
+
+        ShoppingList.findById(req.params.list_id).then(list => {
+            // Check if query returned an instance
+            if (!list) {
+                res.status(404).json({
+                    noList: 'No list found with that id'
+                });
+                return;
+            }
+
+            // Check if user belongs to shopping list provided
+            if (
+                !list.contributors
+                    .map(user => user.toString())
+                    .contains(req.user.id)
+            ) {
+                res.status(401).json({
+                    Unauthorised:
+                        'You do not have permission to edit this shopping list'
+                });
+                return;
+            }
+
+            list.items.pull(req.params.item_id);
+
+            list.save()
+                .then(list => res.json(list))
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        serverError: 'Something went wrong'
+                    });
+                });
+        });
+    }
+);
+
+// Refactor the following route into add/update/remove/purchase items
 // @route   PATCH /update/:list_id
 // @desc    Update items within a shopping list
 // @access  Private
@@ -59,19 +158,6 @@ router.patch(
             if (!list) {
                 res.status(404).json({
                     noList: 'No list found with that id'
-                });
-                return;
-            }
-
-            // Check if user belongs to shopping list provided
-            if (
-                !list.participants
-                    .map(user => user.toString())
-                    .contains(req.user.id)
-            ) {
-                res.status(401).json({
-                    Unauthorised:
-                        'You do not have permission to edit this shopping list'
                 });
                 return;
             }
