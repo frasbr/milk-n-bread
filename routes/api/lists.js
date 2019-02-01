@@ -142,19 +142,17 @@ router.post(
     }
 );
 
-// Refactor the following route into add/update/remove/purchase items
-// @route   PATCH /update/:list_id
-// @desc    Update items within a shopping list
-// @access  Private
+// @route   /:list_id/updateItem/:item_id
+// @desc    Update the quantity of an item
+// @access  Private - Restricted to ShoppingList.contributors
 router.patch(
-    '/update/:list_id',
+    '/:list_id/updateItem/:item_id',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        // Validate form data
-
-        // Sanitise req.params
+        // Validation and sanitisation goes here
 
         ShoppingList.findById(req.params.list_id).then(list => {
+            // Check if query returned an instance
             if (!list) {
                 res.status(404).json({
                     noList: 'No list found with that id'
@@ -162,11 +160,36 @@ router.patch(
                 return;
             }
 
-            list.items = req.body.items;
+            // Check if user belongs to shopping list provided
+            if (
+                !list.contributors
+                    .map(user => user.toString())
+                    .contains(req.user.id)
+            ) {
+                res.status(401).json({
+                    Unauthorised:
+                        'You do not have permission to edit this shopping list'
+                });
+                return;
+            }
+
+            // Find item within list
+            const itemIndex = list.items.indexOf(req.params.item_id);
+            if (itemIndex < 0) {
+                res.status(404).json({
+                    noItem: 'No item found with that id in this list'
+                });
+                return;
+            }
+
+            const item = list.items[itemIndex];
+
+            item.quantity = req.body.quantity
+                ? req.body.quantity
+                : item.quantity;
+
             list.save()
-                .then(newList => {
-                    res.json(newList);
-                })
+                .then(list => res.json(list))
                 .catch(err => {
                     console.log(err);
                     res.status(500).json({
@@ -211,10 +234,138 @@ router.delete(
     }
 );
 
-//remove/:list
+// @route   PATCH /:list_id/addUser/:user_id
+// @desc    Add a user to a ShoppingList's contributors
+// @access  Private - Restricted to ShoppingList.author
+
+router.patch(
+    '/:list_id/addUser/:user_id',
+    passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+        // VALIDATE AND SANITISE
+
+        ShoppingList.findById(req.params.list_id).then(list => {
+            if (!list) {
+                res.status(404).json({
+                    noList: 'No list found with that Id'
+                });
+                return;
+            }
+
+            if (list.author.toString() !== req.user.id) {
+                res.status(401).json({
+                    unauthorised: 'You do not have permission to add a user'
+                });
+                return;
+            }
+
+            if (!list.contributors.indexOf(req.params.user_id) < 0) {
+                res.status(400).json({
+                    noUser: 'User already belongs to this list'
+                });
+                return;
+            }
+
+            list.contributors.push(req.params.user_id);
+            list.save()
+                .then(list => res.json(list))
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        serverError: 'Something went wrong'
+                    });
+                });
+        });
+    }
+);
+
+// @route   PATCH /:list_id/removeUser/:user_id
+// @desc    Remove a user from a ShoppingList's contributors
+// @access  Private - Restricted to ShoppingList.author
+router.patch(
+    '/:list_id/removeUser/:user_id',
+    passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+        // VALIDATE AND SANITISE
+
+        ShoppingList.findById(req.params.list_id).then(list => {
+            if (!list) {
+                res.status(404).json({
+                    noList: 'No list found with that Id'
+                });
+                return;
+            }
+
+            if (list.author.toString() !== req.user.id) {
+                res.status(401).json({
+                    unauthorised: 'You do not have permission to remove a user'
+                });
+                return;
+            }
+
+            if (list.contributors.indexOf(req.params.user_id) < 0) {
+                res.status(404).json({
+                    noUser: 'No user with that id belongs to this list'
+                });
+                return;
+            }
+
+            list.contributors.pull(req.params.user_id);
+            list.save()
+                .then(list => res.json(list))
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        serverError: 'Something went wrong'
+                    });
+                });
+        });
+    }
+);
+
+// @route   GET /
+// @desc    Retrieve all lists that user belongs to
+// @access  Private
+router.get(
+    '/',
+    passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+        ShoppingList.find({ contributors: req.user.id }).then(lists => {
+            if (!lists || lists.length < 1) {
+                res.status(404).json({
+                    noLists: "You don't belong to any shopping lists"
+                });
+                return;
+            }
+
+            res.json(lists);
+        });
+    }
+);
+
+// @route   GET /:list_id
+// @desc    Retrieve all lists that user belongs to
+// @access  Private
+router.get(
+    '/',
+    passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+        // Sanitise req.params.list_id
+
+        ShoppingList.findById(req.params.list_id).then(list => {
+            if (!list) {
+                res.status(404).json({
+                    noList: 'No list found with that id'
+                });
+                return;
+            }
+
+            res.json(list);
+        });
+    }
+);
+
 //get (all)
 //get/:list
-//:list/add/:user
-//:list/remove/:user
 
 module.exports = router;
