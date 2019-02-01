@@ -142,6 +142,50 @@ router.post(
     }
 );
 
+// @route   /:list_id/purchase/:item_id
+// @desc    Set an items status to purchased
+// @access  Private - restricted to ShoppingList.contributors
+router.patch(
+    '/:list_id/purchase/:item_id',
+    passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+        ShoppingList.findById(req.params.list_id).then(list => {
+            if (!list) {
+                res.status(404).json({
+                    noList: 'No list found with that id'
+                });
+                return;
+            }
+
+            if (list.contributors.indexOf(req.user.id) < 0) {
+                res.status(401).json({
+                    unauthorised: 'You do not have permission to edit this list'
+                });
+                return;
+            }
+
+            const itemIndex = list.items.indexOf(req.params.item_id);
+            if (itemIndex < 0) {
+                res.status(404).json({
+                    noItem: 'No item found in this list with that id'
+                });
+                return;
+            }
+
+            list.items[itemIndex].purchased = true;
+            list.items[itemIndex].purchasedBy = req.user.id;
+            list.save()
+                .then(list => res.json(list))
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        serverError: 'Something went wrong'
+                    });
+                });
+        });
+    }
+);
+
 // @route   /:list_id/updateItem/:item_id
 // @desc    Update the quantity of an item
 // @access  Private - Restricted to ShoppingList.contributors
