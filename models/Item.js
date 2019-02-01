@@ -8,11 +8,13 @@ const ItemSchema = new Schema({
     },
     quantity: {
         type: Number,
-        required: true
+        required: true,
+        default: 1
     },
     purchased: {
         type: Boolean,
-        required: true
+        required: true,
+        default: false
     },
     purchasedBy: {
         type: [

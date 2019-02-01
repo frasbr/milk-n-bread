@@ -62,11 +62,7 @@ router.post(
             }
 
             // Check if user belongs to shopping list provided
-            if (
-                !list.contributors
-                    .map(user => user.toString())
-                    .contains(req.user.id)
-            ) {
+            if (list.contributors.indexOf(req.user.id) < 0) {
                 res.status(401).json({
                     Unauthorised:
                         'You do not have permission to edit this shopping list'
@@ -96,10 +92,10 @@ router.post(
     }
 );
 
-// @route   POST /:list_id/removeItem/:item_id
+// @route   PATCH /:list_id/removeItem/:item_id
 // @desc    Remove an item from a ShoppingList
 // @access  Private - Restricted to ShoppingList.contributors
-router.post(
+router.patch(
     '/:list_id/removeItem/:item_id',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
@@ -116,11 +112,7 @@ router.post(
             }
 
             // Check if user belongs to shopping list provided
-            if (
-                !list.contributors
-                    .map(user => user.toString())
-                    .contains(req.user.id)
-            ) {
+            if (list.contributors.indexOf(req.user.id) < 0) {
                 res.status(401).json({
                     Unauthorised:
                         'You do not have permission to edit this shopping list'
@@ -164,7 +156,9 @@ router.patch(
                 return;
             }
 
-            const itemIndex = list.items.indexOf(req.params.item_id);
+            const itemIndex = list.items
+                .map(item => item._id.toString())
+                .indexOf(req.params.item_id);
             if (itemIndex < 0) {
                 res.status(404).json({
                     noItem: 'No item found in this list with that id'
@@ -205,11 +199,7 @@ router.patch(
             }
 
             // Check if user belongs to shopping list provided
-            if (
-                !list.contributors
-                    .map(user => user.toString())
-                    .contains(req.user.id)
-            ) {
+            if (list.contributors.indexOf(req.user.id) < 0) {
                 res.status(401).json({
                     Unauthorised:
                         'You do not have permission to edit this shopping list'
@@ -218,8 +208,13 @@ router.patch(
             }
 
             // Find item within list
-            const itemIndex = list.items.indexOf(req.params.item_id);
+            const itemIndex = list.items
+                .map(item => item._id.toString())
+                .indexOf(req.params.item_id);
             if (itemIndex < 0) {
+                console.log(itemIndex);
+                console.log(req.params.item_id);
+                console.log(typeof req.params.item_id);
                 res.status(404).json({
                     noItem: 'No item found with that id in this list'
                 });
