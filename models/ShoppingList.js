@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const itemSchema = require('Item');
+const itemSchema = require('./Item');
 
 const ShoppingListSchema = new Schema({
     name: {

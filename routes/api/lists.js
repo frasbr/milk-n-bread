@@ -344,8 +344,8 @@ router.get(
 );
 
 // @route   GET /:list_id
-// @desc    Retrieve all lists that user belongs to
-// @access  Private
+// @desc    Retrieve a list specified by a list_id
+// @access  Private - Restricted to ShoppingList.contributor
 router.get(
     '/',
     passport.authenticate('jwt', { session: false }),
@@ -358,6 +358,12 @@ router.get(
                     noList: 'No list found with that id'
                 });
                 return;
+            }
+
+            if (list.contributors.indexOf(req.user.id) < 0) {
+                res.status(401).json({
+                    unauthorised: 'You are not authorised to view this list'
+                });
             }
 
             res.json(list);
