@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const passport = require('passport');
+const helmet = require('helmet');
 
 // Import routes
 const users = require('./routes/api/users');
@@ -21,6 +22,9 @@ mongoose
     .connect(db, { useNewUrlParser: true })
     .then(() => console.log('Successfully connected to database'))
     .catch(err => console.log(err));
+
+// Helmet middleware sets content headers for security purposes
+app.use(helmet());
 
 // Passport middleware for authenticating private routes
 app.use(passport.initialize());
