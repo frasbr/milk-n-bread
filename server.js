@@ -3,11 +3,13 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
 
 // Import routes
 const users = require('./routes/api/users');
 const lists = require('./routes/api/lists');
 
+// Initialise express server
 const app = express();
 
 // Body parser middleware - Buffers http response stream into js object
@@ -25,6 +27,13 @@ mongoose
 
 // Helmet middleware sets content headers for security purposes
 app.use(helmet());
+
+// Sanitisation middleware
+app.use(
+    mongoSanitize({
+        replaceWith: '_'
+    })
+);
 
 // Passport middleware for authenticating private routes
 app.use(passport.initialize());
