@@ -420,7 +420,6 @@ router.post(
                     participants: { $all: [req.params.user_id, req.user.id] }
                 }).then(request => {
                     if (request) {
-                        console.log(request);
                         res.status(400).json({
                             alreadySent: 'Request already exists'
                         });

@@ -6,9 +6,10 @@ const keys = require('../../config/keys');
 const User = require('../../models/User');
 const ShoppingList = require('../../models/ShoppingList');
 
-// TODO:
 // Load validation
-const isEmpty = require('../../validation/isEmpty');
+const validateListCreate = require('../../validation/listCreate');
+const validateItemAdd = require('../../validation/itemAdd');
+const validateItemUpdate = require('../../validation/itemUpdate');
 
 // Routes
 // @route   POST /create
@@ -19,10 +20,10 @@ router.post(
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
         // Validate form data
-        /* const {errors, isValid} = validateListCreate(req.body);
+        const { errors, isValid } = validateListCreate(req.body);
         if (!isValid) {
             res.status(400).json(errors);
-        } */
+        }
 
         const newList = new ShoppingList({
             name: req.body.name,
@@ -50,7 +51,11 @@ router.post(
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
         // Validate form input
-        // Validate req.params.list_id
+        const { errors, isValid } = validateItemAdd(req.body);
+        if (!isValid) {
+            res.status(400).json(errors);
+            return;
+        }
 
         ShoppingList.findById(req.params.list_id).then(list => {
             // Check if query returned an instance
@@ -99,9 +104,6 @@ router.patch(
     '/:list_id/removeItem/:item_id',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        // Validate form input
-        // Validate req.params
-
         ShoppingList.findById(req.params.list_id).then(list => {
             // Check if query returned an instance
             if (!list) {
@@ -187,7 +189,12 @@ router.patch(
     '/:list_id/updateItem/:item_id',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        // Validation and sanitisation goes here
+        // Validate inputs
+        const { errors, isValid } = validateItemUpdate(req.body);
+        if (!isValid) {
+            res.status(400).json(errors);
+            return;
+        }
 
         ShoppingList.findById(req.params.list_id).then(list => {
             // Check if query returned an instance
@@ -212,9 +219,6 @@ router.patch(
                 .map(item => item._id.toString())
                 .indexOf(req.params.item_id);
             if (itemIndex < 0) {
-                console.log(itemIndex);
-                console.log(req.params.item_id);
-                console.log(typeof req.params.item_id);
                 res.status(404).json({
                     noItem: 'No item found with that id in this list'
                 });
@@ -223,9 +227,7 @@ router.patch(
 
             const item = list.items[itemIndex];
 
-            item.quantity = req.body.quantity
-                ? req.body.quantity
-                : item.quantity;
+            item.quantity = req.body.quantity;
 
             list.save()
                 .then(list => res.json(list))
@@ -281,8 +283,6 @@ router.patch(
     '/:list_id/addUser/:user_id',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        // VALIDATE AND SANITISE
-
         ShoppingList.findById(req.params.list_id).then(list => {
             if (!list) {
                 res.status(404).json({
@@ -325,8 +325,6 @@ router.patch(
     '/:list_id/removeUser/:user_id',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        // VALIDATE AND SANITISE
-
         ShoppingList.findById(req.params.list_id).then(list => {
             if (!list) {
                 res.status(404).json({
@@ -389,8 +387,6 @@ router.get(
     '/',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        // Sanitise req.params.list_id
-
         ShoppingList.findById(req.params.list_id).then(list => {
             if (!list) {
                 res.status(404).json({
@@ -409,8 +405,5 @@ router.get(
         });
     }
 );
-
-//get (all)
-//get/:list
 
 module.exports = router;
