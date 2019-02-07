@@ -206,6 +206,41 @@ router.get(
     }
 );
 
+// @route   POST /search/:username
+// @desc    Search for a user by username
+// @access  Private
+router.post(
+    '/search',
+    passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+        if (!req.body.search) {
+            res.status(400).json({
+                search: 'Please enter a username to search for'
+            });
+            return;
+        }
+        const query = req.body.search.replace(
+            /[-[\]{}()*+?.,\\^$|#\s]/g,
+            '\\$&'
+        );
+        User.find({ username: query }).then(users => {
+            if (!users || users.length < 1) {
+                res.status(404).json({ noUsers: 'No users found' });
+                return;
+            }
+
+            res.json(
+                users.map(user => {
+                    return {
+                        id: user.id,
+                        username: user.username
+                    };
+                })
+            );
+        });
+    }
+);
+
 // @route   POST /forgotPassword
 // @desc    Make a request to reset the password of an account
 // @access  Public
