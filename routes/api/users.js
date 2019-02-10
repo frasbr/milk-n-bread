@@ -29,6 +29,7 @@ router.post('/register', (req, res) => {
     const { errors, isValid } = validateRegisterInput(req.body);
     if (!isValid) {
         res.status(400).json(errors);
+        return;
     }
 
     Promise.all([
@@ -45,25 +46,26 @@ router.post('/register', (req, res) => {
             }
             if (!isEmpty(errors)) {
                 res.status(400).json(errors);
-            } else {
-                // If username and email are both unique then create a new user entry
-                const newUser = new User({
-                    username: req.body.username,
-                    email: req.body.email,
-                    password: req.body.password
-                });
-
-                // Hash password and save entry to database
-                bcrypt.genSalt(10, (err, salt) => {
-                    bcrypt.hash(newUser.password, salt, (err, hash) => {
-                        newUser.password = hash;
-                        newUser
-                            .save()
-                            .then(user => res.json(user))
-                            .catch(err => console.log(err));
-                    });
-                });
+                return;
             }
+
+            // If username and email are both unique then create a new user entry
+            const newUser = new User({
+                username: req.body.username,
+                email: req.body.email,
+                password: req.body.password
+            });
+
+            // Hash password and save entry to database
+            bcrypt.genSalt(10, (err, salt) => {
+                bcrypt.hash(newUser.password, salt, (err, hash) => {
+                    newUser.password = hash;
+                    newUser
+                        .save()
+                        .then(user => res.json(user))
+                        .catch(err => console.log(err));
+                });
+            });
         })
         .catch(err => console.log(err));
 });
@@ -76,6 +78,7 @@ router.post('/login', (req, res) => {
     const { errors, isValid } = validateLoginInput(req.body);
     if (!isValid) {
         res.status(400).json(errors);
+        return;
     }
 
     const username = req.body.username;
@@ -101,10 +104,12 @@ router.post('/login', (req, res) => {
                                 keys.secretOrKey,
                                 { expiresIn: 86400 },
                                 (err, token) => {
-                                    if (err)
+                                    if (err) {
                                         res.status(500).json({
                                             server: 'Something went wrong'
                                         });
+                                        return;
+                                    }
                                     res.json({
                                         success: true,
                                         token: 'Bearer ' + token

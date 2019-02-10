@@ -384,7 +384,7 @@ router.get(
 // @desc    Retrieve a list specified by a list_id
 // @access  Private - Restricted to ShoppingList.contributor
 router.get(
-    '/',
+    '/:list_id',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
         ShoppingList.findById(req.params.list_id).then(list => {
