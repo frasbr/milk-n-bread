@@ -14,10 +14,11 @@ module.exports = validateListCreate = data => {
     }
 
     if (
-        Validator.isEmpty(data.quantity) ||
-        !Validator.isNumeric(data.quantity)
+        !isEmpty(data.description) &&
+        !Validator.isLength(data.description, { max: 240 })
     ) {
-        errors.quantity = 'Please enter a number';
+        errors.description =
+            'List description must be less than 240 characters';
     }
 
     return {

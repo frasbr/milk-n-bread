@@ -30,12 +30,13 @@ export const loginUser = userData => dispatch => {
             // Set current user in state
             dispatch(setCurrentUser(decoded));
         })
-        .catch(err =>
+        .catch(err => {
+            console.log(err);
             dispatch({
                 type: GET_ERRORS,
                 payload: err.response.data
-            })
-        );
+            });
+        });
 };
 
 // Receives decoded jwt token as input and sends it to authReducer

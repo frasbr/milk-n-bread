@@ -31,7 +31,11 @@ router.post(
             author: req.user.id
         });
 
-        newList.contributors.push(req.user.id);
+        const contributor = {
+            id: req.user.id,
+            username: req.user.username
+        };
+        newList.contributors.push(contributor);
 
         newList
             .save()
@@ -67,7 +71,11 @@ router.post(
             }
 
             // Check if user belongs to shopping list provided
-            if (list.contributors.indexOf(req.user.id) < 0) {
+            if (
+                list.contributors
+                    .map(contributor => contributor.id.toString())
+                    .indexOf(req.user.id) < 0
+            ) {
                 res.status(401).json({
                     Unauthorised:
                         'You do not have permission to edit this shopping list'
@@ -114,7 +122,11 @@ router.patch(
             }
 
             // Check if user belongs to shopping list provided
-            if (list.contributors.indexOf(req.user.id) < 0) {
+            if (
+                list.contributors
+                    .map(contributor => contributor.id.toString())
+                    .indexOf(req.user.id) < 0
+            ) {
                 res.status(401).json({
                     Unauthorised:
                         'You do not have permission to edit this shopping list'
@@ -151,7 +163,11 @@ router.patch(
                 return;
             }
 
-            if (list.contributors.indexOf(req.user.id) < 0) {
+            if (
+                list.contributors
+                    .map(contributor => contributor.id.toString())
+                    .indexOf(req.user.id) < 0
+            ) {
                 res.status(401).json({
                     unauthorised: 'You do not have permission to edit this list'
                 });
@@ -206,7 +222,11 @@ router.patch(
             }
 
             // Check if user belongs to shopping list provided
-            if (list.contributors.indexOf(req.user.id) < 0) {
+            if (
+                list.contributors
+                    .map(contributor => contributor.id.toString())
+                    .indexOf(req.user.id) < 0
+            ) {
                 res.status(401).json({
                     Unauthorised:
                         'You do not have permission to edit this shopping list'
@@ -298,16 +318,41 @@ router.patch(
                 return;
             }
 
-            if (!list.contributors.indexOf(req.params.user_id) < 0) {
+            if (
+                !list.contributors
+                    .map(contributor => contributor.id.toString())
+                    .indexOf(req.params.user_id) < 0
+            ) {
                 res.status(400).json({
                     noUser: 'User already belongs to this list'
                 });
                 return;
             }
 
-            list.contributors.push(req.params.user_id);
-            list.save()
-                .then(list => res.json(list))
+            User.findById(req.params.user_id)
+                .then(user => {
+                    if (!user) {
+                        res.status(404).json({
+                            noUser: 'No user found with that id'
+                        });
+                        return;
+                    }
+
+                    const userToAdd = {
+                        id: user._id,
+                        username: user.username
+                    };
+
+                    list.contributors.push(userToAdd);
+                    list.save()
+                        .then(list => res.json(list))
+                        .catch(err => {
+                            console.log(err);
+                            res.status(500).json({
+                                serverError: 'Something went wrong'
+                            });
+                        });
+                })
                 .catch(err => {
                     console.log(err);
                     res.status(500).json({
@@ -340,14 +385,18 @@ router.patch(
                 return;
             }
 
-            if (list.contributors.indexOf(req.params.user_id) < 0) {
+            if (
+                list.contributors
+                    .map(contributor => contributor.id.toString())
+                    .indexOf(req.params.user_id) < 0
+            ) {
                 res.status(404).json({
                     noUser: 'No user with that id belongs to this list'
                 });
                 return;
             }
 
-            list.contributors.pull(req.params.user_id);
+            list.contributors.pull();
             list.save()
                 .then(list => res.json(list))
                 .catch(err => {
@@ -367,10 +416,10 @@ router.get(
     '/',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        ShoppingList.find({ contributors: req.user.id }).then(lists => {
+        ShoppingList.find({ 'contributors.id': req.user.id }).then(lists => {
             if (!lists || lists.length < 1) {
                 res.status(404).json({
-                    noLists: "You don't belong to any shopping lists"
+                    noLists: "You don't have any shopping lists"
                 });
                 return;
             }
@@ -387,22 +436,33 @@ router.get(
     '/:list_id',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        ShoppingList.findById(req.params.list_id).then(list => {
-            if (!list) {
-                res.status(404).json({
-                    noList: 'No list found with that id'
-                });
-                return;
-            }
+        ShoppingList.findById(req.params.list_id)
+            .then(list => {
+                if (!list) {
+                    res.status(404).json({
+                        noList: 'No list found with that id'
+                    });
+                    return;
+                }
 
-            if (list.contributors.indexOf(req.user.id) < 0) {
-                res.status(401).json({
-                    unauthorised: 'You are not authorised to view this list'
-                });
-            }
+                if (
+                    list.contributors
+                        .map(contributor => contributor.id.toString())
+                        .indexOf(req.user.id) < 0
+                ) {
+                    res.status(401).json({
+                        unauthorised: 'You are not authorised to view this list'
+                    });
+                    return;
+                }
 
-            res.json(list);
-        });
+                res.json(list);
+            })
+            .catch(err =>
+                res.status(500).json({
+                    serverError: 'Something went wrong'
+                })
+            );
     }
 );
 

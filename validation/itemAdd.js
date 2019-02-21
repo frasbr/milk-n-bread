@@ -20,6 +20,10 @@ module.exports = validateListCreate = data => {
         errors.quantity = 'Please enter a number';
     }
 
+    if (Validator.isNumeric(data.quantity) && Number(data.quantity) <= 0) {
+        errors.quantity = 'Please enter a number greater than 0';
+    }
+
     return {
         errors,
         isValid: isEmpty(errors)

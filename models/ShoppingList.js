@@ -19,8 +19,11 @@ const ShoppingListSchema = new Schema({
     contributors: {
         type: [
             {
-                type: Schema.Types.ObjectId,
-                ref: 'users'
+                id: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'users'
+                },
+                username: String
             }
         ]
     },
