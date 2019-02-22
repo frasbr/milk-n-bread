@@ -184,6 +184,14 @@ router.patch(
                 return;
             }
 
+            if (list.items[itemIndex].purchased) {
+                res.status(400).json({
+                    alreadyPurchased:
+                        'Item has already been marked as purchased'
+                });
+                return;
+            }
+
             list.items[itemIndex].purchased = true;
             list.items[itemIndex].purchasedBy = req.user.id;
             list.save()

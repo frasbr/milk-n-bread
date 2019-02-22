@@ -7,7 +7,7 @@ import ListExpanded from './ListExpanded';
 
 function Dashboard({ match }) {
     return (
-        <div>
+        <div className="dashboard">
             <div className="wrapper">
                 <div className="container">
                     <Route path={match.path} exact component={ListView} />

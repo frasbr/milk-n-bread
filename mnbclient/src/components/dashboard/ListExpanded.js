@@ -5,7 +5,12 @@ import { withRouter } from 'react-router-dom';
 import ListItem from './ListItem';
 import InputGroup from '../common/InputGroup';
 
-import { getList } from '../../actions/listActions';
+import {
+    getList,
+    addItem,
+    purchaseItem,
+    deleteItem
+} from '../../actions/listActions';
 
 class ListExpanded extends Component {
     constructor() {
@@ -17,29 +22,25 @@ class ListExpanded extends Component {
         };
     }
 
-    /* componentDidMount() {
-        if (this.props.location.state) {
-            this.setState({ list: this.props.location.state.list });
-        } else {
-            this.props.getList(this.props.match.params.list_id);
-        }
-    } */
-
     onChange = e => {
         this.setState({ [e.target.name]: e.target.value });
     };
 
     addItem = e => {
         e.preventDefault();
-        console.log('item added');
+        const itemData = {
+            name: this.state.name,
+            quantity: this.state.quantity
+        };
+        this.props.addItem(itemData, this.state.list._id);
     };
 
-    deleteItem = id => {
-        this.props.deleteItem(id);
+    deleteItem = item_id => {
+        this.props.deleteItem(this.state.list._id, item_id);
     };
 
-    purchaseItem = id => {
-        this.props.purchaseItem(id);
+    purchaseItem = item_id => {
+        this.props.purchaseItem(this.state.list._id, item_id);
     };
 
     componentDidMount() {
@@ -90,8 +91,13 @@ class ListExpanded extends Component {
 
             return (
                 <div className="list-expanded-container">
-                    <div className="return-button" onClick={this.goBack}>
-                        <img src="/icons/back.svg" alt="back" />
+                    <div className="top-bar">
+                        <div className="return-button" onClick={this.goBack}>
+                            <img src="/icons/back.svg" alt="back" />
+                        </div>
+                        <div className="delete-list" onClick={this.deleteList}>
+                            <img src="/icons/close.svg" alt="delete list" />
+                        </div>
                     </div>
                     <div className="list-expanded">
                         <div className="list-info">
@@ -108,13 +114,23 @@ class ListExpanded extends Component {
                                 )}
                             </div>
                             <div className="date">{dateString}</div>
+                            {list.items.length === 0 && (
+                                <div className="no-items">
+                                    There are no items on this list. Add one
+                                    below
+                                </div>
+                            )}
                         </div>
                         <div className="list-items">
                             {list.items.map(item => {
                                 return (
                                     <ListItem
+                                        id={item._id}
                                         name={item.name}
                                         quantity={item.quantity}
+                                        purchased={item.purchased}
+                                        onPurchase={this.purchaseItem}
+                                        onDelete={this.deleteItem}
                                         key={item._id}
                                     />
                                 );
@@ -158,5 +174,5 @@ const mapStateToProps = state => ({
 
 export default connect(
     mapStateToProps,
-    { getList }
+    { getList, addItem, purchaseItem, deleteItem }
 )(withRouter(ListExpanded));

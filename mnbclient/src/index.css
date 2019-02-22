@@ -55,6 +55,8 @@ code {
 /* NAVBAR */
 
 .nav-main {
+    position: sticky;
+    top: 0;
     display: grid;
     grid-template-columns: 1fr 80px 80px 80px;
     justify-items: center;
@@ -63,6 +65,7 @@ code {
     height: 100px;
     padding: 10px;
     background-color: #f8bc3b;
+    z-index: 100;
 }
 
 .nav-main .nav-home {
@@ -101,6 +104,10 @@ code {
 
 /* LAYOUT */
 
+.dashboard {
+    position: relative;
+}
+
 .wrapper {
     width: 100%;
     position: relative;
@@ -109,8 +116,8 @@ code {
 
 .container {
     max-width: 1000px;
-    padding-left: 10px;
-    padding-right: 10px;
+    /* padding-left: 10px;
+    padding-right: 10px; */
     margin: 0 auto;
     margin-bottom: 80px;
 }
@@ -332,10 +339,21 @@ a {
     height: 50px;
     display: flex;
     align-items: center;
+    margin-bottom: 6px;
 }
 
 .list-expanded-container .return-button img {
     width: 40px;
+    filter: invert(1) drop-shadow(0px 2px 0px #0000001a);
+}
+
+.list-expanded-container > .top-bar {
+    display: grid;
+    grid-template-columns: 9fr 1fr;
+}
+
+.list-expanded-container > .top-bar > .delete-list {
+    justify-self: center;
 }
 
 .list-expanded > .list-info {
@@ -355,16 +373,23 @@ a {
 .list-expanded .contributors {
     font-size: 1.8rem;
     color: #714823;
-    display: inline;
+    display: block;
 }
 
 .list-expanded .date {
-    font-size: 1.2rem;
-    line-height: 1rem;
+    font-size: 1.4rem;
     color: #714823;
     opacity: 0.5;
-    display: inline-block;
-    margin-left: 20px;
+    display: block;
+}
+
+.list-expanded .no-items {
+    margin-top: 40px;
+    font-size: 1.8rem;
+    text-align: center;
+    color: #714823;
+    opacity: 0.5;
+    padding-bottom: 20px;
 }
 
 .list-expanded-container .bottom-form {
@@ -418,6 +443,7 @@ a {
     font-size: 2.4rem;
     height: 100px;
     align-items: center;
+    cursor: pointer;
 }
 
 .list-item .quantity {
@@ -432,16 +458,36 @@ a {
     align-items: center;
     justify-content: center;
     justify-self: center;
-    display: hidden;
+    /* visibility: hidden; */
+    transition: transform 0.05s ease-out;
+    transform: scale(0);
 }
 
 .list-item .delete-button img {
-    height: 20px;
-    background-color: #d62a13;
+    height: 40px;
+    filter: invert(1) drop-shadow(0px 1px 4px rgba(0, 0, 0, 0.1));
+    background-color: #3bebcd;
+    border-radius: 50px;
 }
 
-.list-item .delete-button.active {
-    display: block;
+.list-item.active .delete-button {
+    visibility: visible;
+    transform: scale(1);
+    animation: grow 0.05s ease-out 0s 1;
+}
+
+@keyframes grow {
+    0% {
+        transform: scale(0);
+    }
+
+    80% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 .list-item .purchase-button {
@@ -465,4 +511,13 @@ a {
 .list-item .purchase-button img {
     height: 30px;
     filter: invert(1);
+}
+
+.list-item.purchased div {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+.list-item.purchased .purchase-button {
+    visibility: hidden;
 }

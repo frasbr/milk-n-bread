@@ -1,31 +1,45 @@
-import React from 'react';
+import React, { Component } from 'react';
+import classnames from 'classnames';
 
-export default function ListItem({
-    id,
-    name,
-    quantity,
-    onDelete,
-    onPurchase,
-    onUpdate
-}) {
-    const _onDelete = () => {
-        onDelete(id);
+export default class ListItem extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            active: false
+        };
+    }
+
+    deleteItem = () => {
+        this.props.onDelete(this.props.id);
     };
 
-    const _onPurchase = () => {
-        onPurchase(id);
+    purchaseItem = e => {
+        e.preventDefault();
+        this.props.onPurchase(this.props.id);
     };
 
-    return (
-        <div className="list-item">
-            <div className="quantity">{quantity}</div>
-            <div className="name">{name}</div>
-            <div className="delete-button" onClick={_onDelete}>
-                <img src="/icons/close.svg" alt="delete" />
+    onClick = e => {
+        this.setState({ active: !this.state.active });
+    };
+
+    render() {
+        return (
+            <div
+                className={classnames('list-item', {
+                    purchased: this.props.purchased,
+                    active: this.state.active
+                })}
+                onClick={this.onClick}
+            >
+                <div className="quantity">{this.props.quantity}</div>
+                <div className="name">{this.props.name}</div>
+                <div className="delete-button" onClick={this.deleteItem}>
+                    <img src="/icons/close.svg" alt="delete" />
+                </div>
+                <div className="purchase-button" onClick={this.purchaseItem}>
+                    <img src="/icons/cart_tick.svg" alt="" />
+                </div>
             </div>
-            <div className="purchase-button" onClick={_onPurchase}>
-                <img src="/icons/cart_tick.svg" alt="" />
-            </div>
-        </div>
-    );
+        );
+    }
 }
