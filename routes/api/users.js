@@ -32,6 +32,11 @@ router.post('/register', (req, res) => {
         return;
     }
 
+    const username = req.body.username.replace(
+        /[-[\]{}()*+?.,\\^$|#\s]/g,
+        '\\$&'
+    );
+
     Promise.all([
         User.findOne({ username: req.body.username }),
         User.findOne({ email: req.body.email })
@@ -333,13 +338,13 @@ router.post('/forgotPassword/:token', (req, res) => {
                     if (!user.passwordResetToken) {
                         // Sanitisation should prevent this from being reachable but just in case
                         res.status(404).json({
-                            noToken: 'No token found for this user'
+                            token: 'No token found for this user'
                         });
                     }
                     // Check that token is still valid
                     if (Date.now() > user.passwordResetTokenExpiry) {
                         res.status(400).json({
-                            tokenExpired:
+                            token:
                                 'Token has expired. Please request another password reset'
                         });
                         return;
@@ -399,15 +404,32 @@ router.get(
         FriendRequest.find({
             participants: req.user.id,
             accepted: true
-        }).then(requests => {
-            if (!requests || requests.length < 1) {
-                res.status(404).json({
-                    noFriends: 'You have no friends :('
-                });
-            } else {
-                res.json(requests);
-            }
-        });
+        })
+            .populate('participants')
+            .then(requests => {
+                if (!requests || requests.length < 1) {
+                    res.status(404).json({
+                        noFriends: 'You have no friends :('
+                    });
+                } else {
+                    const friendsList = requests.map(request => {
+                        // 1 - index of the current user will point to the index of the friended user
+                        // as the participants array can only have 2 members
+                        const friendIndex =
+                            1 -
+                            request.participants
+                                .map(p => p._id.toString())
+                                .indexOf(req.user.id);
+
+                        const friend = request.participants[friendIndex];
+                        return {
+                            _id: friend._id,
+                            username: friend.username
+                        };
+                    });
+                    res.json(friendsList);
+                }
+            });
     }
 );
 
@@ -422,6 +444,7 @@ router.get(
             to: req.user.id,
             pending: true
         })
+            .populate('from')
             .then(requests => {
                 if (!requests || requests.length < 1) {
                     res.status(404).json({
@@ -429,9 +452,19 @@ router.get(
                     });
                     return;
                 }
-                res.json(requests);
+                res.json(
+                    requests.map(request => {
+                        return {
+                            _id: request._id,
+                            from: request.from.username
+                        };
+                    })
+                );
             })
-            .catch(err => console.log(err));
+            .catch(err => {
+                console.log(err);
+                res.status(500).json({ serverError: 'Something went wrong' });
+            });
     }
 );
 
@@ -460,9 +493,39 @@ router.post(
                     participants: { $all: [req.params.user_id, req.user.id] }
                 }).then(request => {
                     if (request) {
-                        res.status(400).json({
-                            alreadySent: 'Request already exists'
-                        });
+                        if (
+                            request.pending &&
+                            !request.accepted &&
+                            request.from.toString() !== req.user.id
+                        ) {
+                            request.pending = false;
+                            request.accepted = true;
+                            request
+                                .save()
+                                .then(updatedRequest => {
+                                    updatedRequest
+                                        .populate('from')
+                                        .execPopulate()
+                                        .then(populatedRequest => {
+                                            res.json({
+                                                _id: populatedRequest._id,
+                                                username:
+                                                    populatedRequest.from
+                                                        .username
+                                            });
+                                        });
+                                })
+                                .catch(err => {
+                                    console.log(err);
+                                    res.status(500).json({
+                                        serverError: 'Something went wrong'
+                                    });
+                                });
+                        } else {
+                            res.status(400).json({
+                                alreadySent: 'Request already exists'
+                            });
+                        }
                         return;
                     } else {
                         const newFriendRequest = new FriendRequest({
@@ -474,8 +537,24 @@ router.post(
 
                         newFriendRequest
                             .save()
-                            .then(newRequest => res.json(newRequest))
-                            .catch(err => console.log(err));
+                            .then(newRequest => {
+                                newRequest
+                                    .populate('to')
+                                    .execPopulate()
+                                    .then(populatedRequest => {
+                                        res.json({
+                                            _id: populatedRequest._id,
+                                            username:
+                                                populatedRequest.to.username
+                                        });
+                                    });
+                            })
+                            .catch(err => {
+                                console.log(err);
+                                res.status(500).json({
+                                    serverError: 'Something went wrong'
+                                });
+                            });
                     }
                 });
             }
@@ -507,7 +586,7 @@ router.post(
 
             if (!request.pending) {
                 res.status(400).json({
-                    invalidRequest: 'Request cannot be answered twice'
+                    invalidRequest: "Request isn't pending"
                 });
                 return;
             }
@@ -515,10 +594,18 @@ router.post(
             request.accepted = true;
             request.acceptedDate = Date.now();
             request.pending = false;
-            request.save().then(response => {
-                res.json(response);
-                return;
-            });
+            request
+                .save()
+                .then(acceptedRequest => {
+                    res.json(acceptedRequest.from._id.toString());
+                    return;
+                })
+                .catch(err => {
+                    res.status(500).json({
+                        serverError: 'Something went wrong'
+                    });
+                    console.log(err);
+                });
         });
     }
 );
@@ -538,7 +625,7 @@ router.delete(
                 return;
             }
 
-            if (request.to.toString() !== req.user.id) {
+            if (request.participants.indexOf(req.user.id) < 0) {
                 res.status(401).json({
                     Unauthorised: 'Unauthorised'
                 });
@@ -547,10 +634,15 @@ router.delete(
 
             request
                 .remove()
-                .then(() => {
-                    res.json({ success: 'Friend request ignored' });
+                .then(removedRequest => {
+                    res.json(removedRequest._id);
                 })
-                .catch(err => console.log(err));
+                .catch(err => {
+                    res.status(500).json({
+                        serverError: 'Something went wrong'
+                    });
+                    console.log(err);
+                });
         });
     }
 );
@@ -567,7 +659,7 @@ router.delete(
 
         FriendRequest.findOneAndDelete({
             participants: { $all: [req.user.id, req.params.user_id] },
-            pending: false
+            accepted: true
         })
             .then(request => {
                 if (!request) {
@@ -576,12 +668,15 @@ router.delete(
                     });
                     return;
                 }
-                const friendId = request.participants.filter(user => {
-                    return user.toString() !== req.user.id;
-                });
-                res.json(friendId);
+                const friendIndex = request.participants
+                    .map(user => user._id.toString())
+                    .indexOf(req.params.user_id);
+                res.json(request.participants[friendIndex]._id);
             })
-            .catch(err => console.log(err));
+            .catch(err => {
+                res.status(500).json({ serverError: 'Something went wrong' });
+                console.log(err);
+            });
     }
 );
 
