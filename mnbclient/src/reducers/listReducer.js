@@ -1,6 +1,7 @@
 import {
     GET_LISTS,
     GET_LIST,
+    REMOVE_LIST,
     LIST_LOADING,
     CLEAR_LISTS
 } from '../actions/types';
@@ -48,6 +49,16 @@ export default function(state = initialState, action) {
                 ...state,
                 userLists: newList,
                 loading: false
+            };
+        case REMOVE_LIST:
+            newList = null;
+            newList = state.userLists.filter(list => {
+                return list._id.toString() !== action.payload;
+            });
+
+            return {
+                ...state,
+                userLists: newList
             };
         case LIST_LOADING:
             return {

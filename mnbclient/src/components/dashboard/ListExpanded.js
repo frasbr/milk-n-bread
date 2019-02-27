@@ -7,6 +7,7 @@ import InputGroup from '../common/InputGroup';
 
 import {
     getList,
+    deleteList,
     addItem,
     purchaseItem,
     deleteItem
@@ -24,6 +25,11 @@ class ListExpanded extends Component {
 
     onChange = e => {
         this.setState({ [e.target.name]: e.target.value });
+    };
+
+    deleteList = () => {
+        this.props.deleteList(this.state.list._id);
+        this.props.history.goBack();
     };
 
     addItem = e => {
@@ -174,5 +180,5 @@ const mapStateToProps = state => ({
 
 export default connect(
     mapStateToProps,
-    { getList, addItem, purchaseItem, deleteItem }
+    { getList, deleteList, addItem, purchaseItem, deleteItem }
 )(withRouter(ListExpanded));

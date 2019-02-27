@@ -5,7 +5,8 @@ export default class ListItem extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            active: false
+            active: false,
+            purchased: false
         };
     }
 
@@ -15,6 +16,7 @@ export default class ListItem extends Component {
 
     purchaseItem = e => {
         e.preventDefault();
+        this.setState({ purchased: true });
         this.props.onPurchase(this.props.id);
     };
 
@@ -22,11 +24,15 @@ export default class ListItem extends Component {
         this.setState({ active: !this.state.active });
     };
 
+    componentDidMount() {
+        this.setState({ purchased: this.props.purchased });
+    }
+
     render() {
         return (
             <div
                 className={classnames('list-item', {
-                    purchased: this.props.purchased,
+                    purchased: this.state.purchased,
                     active: this.state.active
                 })}
                 onClick={this.onClick}

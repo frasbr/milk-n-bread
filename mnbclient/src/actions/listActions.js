@@ -4,6 +4,7 @@ import {
     GET_LISTS,
     LIST_LOADING,
     GET_ERRORS,
+    REMOVE_LIST,
     CLEAR_LISTS,
     GET_LIST
 } from './types';
@@ -36,6 +37,41 @@ export const getList = list_id => dispatch => {
                 payload: res.data
             });
         })
+        .catch(err => {
+            console.log(err);
+            dispatch({
+                type: GET_ERRORS,
+                payload: err.response.data
+            });
+        });
+};
+
+export const createList = listData => dispatch => {
+    axios
+        .post('/api/lists/create', listData)
+        .then(res =>
+            dispatch({
+                type: GET_LIST,
+                payload: res.data
+            })
+        )
+        .catch(err => {
+            dispatch({
+                type: GET_ERRORS,
+                payload: err.response.data
+            });
+        });
+};
+
+export const deleteList = list_id => dispatch => {
+    axios
+        .delete(`/api/lists/remove/${list_id}`)
+        .then(res =>
+            dispatch({
+                type: REMOVE_LIST,
+                payload: res.data
+            })
+        )
         .catch(err => {
             console.log(err);
             dispatch({

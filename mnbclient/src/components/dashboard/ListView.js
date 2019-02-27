@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import { Link, withRouter } from 'react-router-dom';
 
 import { getLists } from '../../actions/listActions';
+import { createListModal } from '../../actions/modalActions';
 
 import { ListPreview } from './ListPreview';
 
@@ -56,10 +57,20 @@ class ListView extends Component {
         } else if (lists && lists.loading) {
             listItems = <h2>Loading...</h2>;
         } else {
-            listItems = <h2>No lists :(</h2>;
+            listItems = <h2>You have no shopping lists. Add one below</h2>;
         }
 
-        return listItems;
+        return (
+            <div className="list-view">
+                {listItems}
+                <button
+                    className="add-list"
+                    onClick={this.props.createListModal}
+                >
+                    +
+                </button>
+            </div>
+        );
     }
 }
 
@@ -70,5 +81,5 @@ const mapStateToProps = state => ({
 
 export default connect(
     mapStateToProps,
-    { getLists }
+    { getLists, createListModal }
 )(withRouter(ListView));

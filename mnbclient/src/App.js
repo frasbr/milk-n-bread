@@ -12,6 +12,7 @@ import Navbar from './components/layout/Navbar';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './components/dashboard/Dashboard';
+import ModalController from './components/modal/ModalController';
 
 import setAuthToken from './utils/setAuthToken';
 import { setCurrentUser, logoutUser } from './actions/authActions';
@@ -54,6 +55,7 @@ class App extends Component {
                                 component={Dashboard}
                             />
                         </Switch>
+                        <ModalController />
                     </div>
                 </Router>
             </Provider>

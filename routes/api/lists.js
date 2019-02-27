@@ -23,6 +23,7 @@ router.post(
         const { errors, isValid } = validateListCreate(req.body);
         if (!isValid) {
             res.status(400).json(errors);
+            return;
         }
 
         const newList = new ShoppingList({
