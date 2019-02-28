@@ -38,7 +38,7 @@ router.post('/register', (req, res) => {
     );
 
     Promise.all([
-        User.findOne({ username: req.body.username }),
+        User.findOne({ username: username }),
         User.findOne({ email: req.body.email })
     ])
         .then(users => {
@@ -56,7 +56,7 @@ router.post('/register', (req, res) => {
 
             // If username and email are both unique then create a new user entry
             const newUser = new User({
-                username: req.body.username,
+                username: username,
                 email: req.body.email,
                 password: req.body.password
             });
@@ -72,7 +72,12 @@ router.post('/register', (req, res) => {
                 });
             });
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                serverError: 'Something went wrong'
+            });
+        });
 });
 
 // @route   POST /login
@@ -95,42 +100,44 @@ router.post('/login', (req, res) => {
                 errors.username = 'Invalid login details';
                 res.status(400).json(errors);
             } else {
-                bcrypt
-                    .compare(password, user.password)
-                    .then(isMatch => {
-                        if (isMatch) {
-                            const payload = {
-                                id: user.id,
-                                username: user.username
-                            };
+                bcrypt.compare(password, user.password).then(isMatch => {
+                    if (isMatch) {
+                        const payload = {
+                            id: user.id,
+                            username: user.username
+                        };
 
-                            jwt.sign(
-                                payload,
-                                keys.secretOrKey,
-                                { expiresIn: 86400 },
-                                (err, token) => {
-                                    if (err) {
-                                        res.status(500).json({
-                                            server: 'Something went wrong'
-                                        });
-                                        return;
-                                    }
-                                    res.json({
-                                        success: true,
-                                        token: 'Bearer ' + token
+                        jwt.sign(
+                            payload,
+                            keys.secretOrKey,
+                            { expiresIn: 86400 },
+                            (err, token) => {
+                                if (err) {
+                                    res.status(500).json({
+                                        server: 'Something went wrong'
                                     });
+                                    return;
                                 }
-                            );
-                        } else {
-                            // Wrong password generates same error message as wrong username
-                            errors.username = 'Invalid login details';
-                            res.status(400).json(errors);
-                        }
-                    })
-                    .catch();
+                                res.json({
+                                    success: true,
+                                    token: 'Bearer ' + token
+                                });
+                            }
+                        );
+                    } else {
+                        // Wrong password generates same error message as wrong username
+                        errors.username = 'Invalid login details';
+                        res.status(400).json(errors);
+                    }
+                });
             }
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                serverError: 'Something went wrong'
+            });
+        });
 });
 
 // @route   DELETE /current
@@ -207,7 +214,7 @@ router.get(
                     });
                 } else {
                     res.json({
-                        id: user.id,
+                        _id: user._id,
                         username: user.username
                     });
                 }
@@ -242,7 +249,7 @@ router.post(
             res.json(
                 users.map(user => {
                     return {
-                        id: user.id,
+                        id: user._id,
                         username: user.username
                     };
                 })
@@ -423,7 +430,7 @@ router.get(
 
                         const friend = request.participants[friendIndex];
                         return {
-                            _id: friend._id,
+                            id: friend._id,
                             username: friend.username
                         };
                     });
@@ -441,7 +448,7 @@ router.get(
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
         FriendRequest.find({
-            to: req.user.id,
+            participants: req.user.id,
             pending: true
         })
             .populate('from')
@@ -455,8 +462,10 @@ router.get(
                 res.json(
                     requests.map(request => {
                         return {
-                            _id: request._id,
-                            from: request.from.username
+                            id: request._id,
+                            from: request.from.username,
+                            to: request.to.username,
+                            incoming: request.to._id.toString() === req.user.id
                         };
                     })
                 );
@@ -493,6 +502,7 @@ router.post(
                     participants: { $all: [req.params.user_id, req.user.id] }
                 }).then(request => {
                     if (request) {
+                        // If request is pending and incoming then accept the request
                         if (
                             request.pending &&
                             !request.accepted &&
@@ -522,12 +532,14 @@ router.post(
                                     });
                                 });
                         } else {
+                            // Otherwise it's either already been answered or it was sent by the current user
                             res.status(400).json({
                                 alreadySent: 'Request already exists'
                             });
                         }
                         return;
                     } else {
+                        // If no request exists already then create a new one
                         const newFriendRequest = new FriendRequest({
                             participants: [req.user.id, req.params.user_id],
                             from: req.user.id,
@@ -543,7 +555,7 @@ router.post(
                                     .execPopulate()
                                     .then(populatedRequest => {
                                         res.json({
-                                            _id: populatedRequest._id,
+                                            id: populatedRequest._id,
                                             username:
                                                 populatedRequest.to.username
                                         });
