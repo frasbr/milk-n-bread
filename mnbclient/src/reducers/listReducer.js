@@ -3,6 +3,7 @@ import {
     GET_LIST,
     REMOVE_LIST,
     LIST_LOADING,
+    LIST_NOT_LOADING,
     CLEAR_LISTS
 } from '../actions/types';
 
@@ -46,7 +47,6 @@ export default function(state = initialState, action) {
             }
 
             return {
-                ...state,
                 userLists: newList,
                 loading: false
             };
@@ -64,6 +64,11 @@ export default function(state = initialState, action) {
             return {
                 ...state,
                 loading: true
+            };
+        case LIST_NOT_LOADING:
+            return {
+                ...state,
+                loading: false
             };
         case CLEAR_LISTS:
             return initialState;

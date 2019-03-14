@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 
 import InputGroup from '../common/InputGroup';
 
-import { createList } from '../../actions/listActions';
+import { createList, addItem } from '../../actions/listActions';
 import { closeModal } from '../../actions/modalActions';
 
 class CreateListModal extends Component {
@@ -23,12 +23,12 @@ class CreateListModal extends Component {
     onSubmit = e => {
         e.preventDefault();
 
-        const newList = {
+        const newItem = {
             name: this.state.name,
-            description: this.state.description
+            quantity: this.state.quantity
         };
 
-        this.props.createList(newList);
+        this.props.addItem(newItem, this.props.list);
         this.props.closeModal();
     };
 
@@ -43,7 +43,7 @@ class CreateListModal extends Component {
             <div className="modal-container" onClick={this.preventModalClose}>
                 <div className="form-container">
                     <div className="top-bar">
-                        <div className="form-title">New&nbsp;list</div>
+                        <div className="form-title">Add&nbsp;Item</div>
                         <div
                             className="close-modal-button"
                             onClick={this.props.closeModal}
@@ -51,25 +51,25 @@ class CreateListModal extends Component {
                             <img src="/icons/close.svg" alt="close" />
                         </div>
                     </div>
-                    <form onSubmit={this.onSubmit} method="post">
+                    <form onSubmit={this.onSubmit} noValidate method="post">
                         <InputGroup
                             type="text"
                             name="name"
-                            label="List name"
+                            label="Item name"
                             onChange={this.onChange}
                             error={errors.username}
                         />
                         <InputGroup
-                            type="text"
-                            name="description"
-                            label="Description"
+                            type="number"
+                            name="quantity"
+                            label="Quantity"
                             onChange={this.onChange}
-                            error={errors.description}
+                            error={errors.quantity}
                         />
                         <input
                             className="submit-button"
                             type="submit"
-                            value="Add list"
+                            value="Add"
                         />
                     </form>
                 </div>
@@ -84,5 +84,5 @@ const mapStateToProps = state => ({
 
 export default connect(
     mapStateToProps,
-    { createList, closeModal }
+    { createList, addItem, closeModal }
 )(CreateListModal);

@@ -1,44 +1,81 @@
 import React, { Component } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-
-import { logoutUser } from '../../actions/authActions';
-import { clearAllLists } from '../../actions/listActions';
+import classnames from 'classnames';
 
 class Navbar extends Component {
-    logout = e => {
-        e.preventDefault();
-        this.props.clearAllLists();
-        this.props.logoutUser();
-    };
+    constructor() {
+        super();
+        this.state = {
+            pathname: ''
+        };
+    }
+
+    componentWillMount() {
+        this.setState({ pathname: this.props.nav.location });
+    }
+
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.nav.location) {
+            this.setState({ pathname: nextProps.nav.location });
+        }
+    }
 
     render() {
+        if (!this.props.auth.isAuthenticated) {
+            return (
+                <nav className="nav nav-main">
+                    <Link to="/" className="nav-home">
+                        <div className="logo">
+                            <img src="/logo.svg" alt="Milk 'n' bread logo" />
+                        </div>
+                    </Link>
+                </nav>
+            );
+        }
+        const isFriendsOpen =
+            this.state.pathname === '/dashboard/friends' ||
+            this.state.pathname === '/dashboard/options';
         return (
             <nav className="nav nav-main">
-                <Link to="/" className="nav-home">
-                    <div className="logo">
-                        <img src="/logo.svg" alt="Milk 'n' bread logo" />
+                <Link to="/" className="nav-home logged-in">
+                    <div className="greeting-text">
+                        Hi, {this.props.auth.user.username}
                     </div>
                 </Link>
-                <div className="nav-icon">
-                    <img src="/icons/list.svg" alt="Lists" />
-                </div>
-                <div className="nav-icon">
-                    <img src="/icons/friends.svg" alt="Friends" />
-                </div>
-                <div className="nav-icon" onClick={this.logout}>
-                    Logout
-                </div>
+                <Link to="/dashboard">
+                    <div
+                        className={classnames('nav-icon', {
+                            'nav-active': !isFriendsOpen
+                        })}
+                    >
+                        <img
+                            src="/icons/list.svg"
+                            className="list-icon"
+                            alt="Lists"
+                        />
+                    </div>
+                </Link>
+                <Link to="/dashboard/friends">
+                    <div
+                        className={classnames('nav-icon', {
+                            'nav-active': isFriendsOpen
+                        })}
+                    >
+                        <img src="/icons/friends.svg" alt="Friends" />
+                    </div>
+                </Link>
             </nav>
         );
     }
 }
 
 const mapStateToProps = state => ({
-    auth: state.auth
+    auth: state.auth,
+    nav: state.nav
 });
 
 export default connect(
     mapStateToProps,
-    { logoutUser, clearAllLists }
-)(Navbar);
+    {}
+)(withRouter(Navbar));

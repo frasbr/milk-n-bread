@@ -10,23 +10,31 @@ export default class ListItem extends Component {
         };
     }
 
-    deleteItem = () => {
+    deleteItem = e => {
+        e.stopPropagation();
         this.props.onDelete(this.props.id);
     };
 
     purchaseItem = e => {
         e.preventDefault();
+        e.stopPropagation();
         this.setState({ purchased: true });
         this.props.onPurchase(this.props.id);
-    };
-
-    onClick = e => {
-        this.setState({ active: !this.state.active });
     };
 
     componentDidMount() {
         this.setState({ purchased: this.props.purchased });
     }
+
+    componentWillReceiveProps(nextProps) {
+        if (typeof nextProps.active === 'boolean') {
+            this.setState({ active: nextProps.active });
+        }
+    }
+
+    handleClick = () => {
+        this.props.onClick(this.props.index);
+    };
 
     render() {
         return (
@@ -35,7 +43,7 @@ export default class ListItem extends Component {
                     purchased: this.state.purchased,
                     active: this.state.active
                 })}
-                onClick={this.onClick}
+                onClick={this.handleClick}
             >
                 <div className="quantity">{this.props.quantity}</div>
                 <div className="name">{this.props.name}</div>

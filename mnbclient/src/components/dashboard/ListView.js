@@ -16,6 +16,10 @@ class ListView extends Component {
         };
     }
 
+    componentWillMount() {
+        this.setState({ lists: this.props.lists.userLists });
+    }
+
     componentDidMount() {
         this.props.getLists();
     }
@@ -33,12 +37,12 @@ class ListView extends Component {
     render() {
         const { lists } = this.state;
         let listItems;
-        if (lists && lists.userLists) {
+        if (lists && lists.userLists && lists.userLists.length > 0) {
             listItems = lists.userLists.map(list => {
                 return (
                     <Link
                         to={{
-                            pathname: `/dashboard/${list._id}`,
+                            pathname: `/dashboard/list/${list._id}`,
                             state: { list: list }
                         }}
                         className="list-preview-link"
@@ -55,9 +59,13 @@ class ListView extends Component {
                 );
             });
         } else if (lists && lists.loading) {
-            listItems = <h2>Loading...</h2>;
+            listItems = <div className="list-view-status-text">Loading...</div>;
         } else {
-            listItems = <h2>You have no shopping lists. Add one below</h2>;
+            listItems = (
+                <div className="list-view-status-text">
+                    You have no shopping lists. Add one below
+                </div>
+            );
         }
 
         return (
@@ -67,7 +75,7 @@ class ListView extends Component {
                     className="add-list"
                     onClick={this.props.createListModal}
                 >
-                    +
+                    <img className="add-icon" src="/icons/close.svg" alt="" />
                 </button>
             </div>
         );
@@ -76,7 +84,8 @@ class ListView extends Component {
 
 const mapStateToProps = state => ({
     auth: state.auth,
-    lists: state.lists
+    lists: state.lists,
+    errors: state.errors
 });
 
 export default connect(

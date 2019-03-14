@@ -16,7 +16,6 @@ import ModalController from './components/modal/ModalController';
 
 import setAuthToken from './utils/setAuthToken';
 import { setCurrentUser, logoutUser } from './actions/authActions';
-import { clearAllLists } from './actions/listActions';
 
 // Check for token
 if (localStorage.jwtToken) {
@@ -32,8 +31,6 @@ if (localStorage.jwtToken) {
     if (decoded.exp < currentTime) {
         // Logout user
         store.dispatch(logoutUser());
-        // Clear current profile
-        store.dispatch(clearAllLists());
         // Redirect to login
         window.location.href = '/login';
     }
@@ -46,13 +43,19 @@ class App extends Component {
                 <Router>
                     <div className="App">
                         <Navbar />
-                        <Route path="/" exact component={Login} />
-                        <Route path="/login" exact component={Login} />
-                        <Route path="/register" exact component={Register} />
+                        <Route path="/" exact component={Login} key={0} />
+                        <Route path="/login" exact component={Login} key={1} />
+                        <Route
+                            path="/register"
+                            exact
+                            component={Register}
+                            key={2}
+                        />
                         <Switch>
                             <PrivateRoute
                                 path="/dashboard"
                                 component={Dashboard}
+                                key={3}
                             />
                         </Switch>
                         <ModalController />

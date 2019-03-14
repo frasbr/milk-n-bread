@@ -1,5 +1,4 @@
 const router = require('express').Router();
-const mongoose = require('mongoose');
 const passport = require('passport');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -32,10 +31,9 @@ router.post('/register', (req, res) => {
         return;
     }
 
-    const username = req.body.username.replace(
-        /[-[\]{}()*+?.,\\^$|#\s]/g,
-        '\\$&'
-    );
+    const username = req.body.username
+        .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
+        .toLowerCase();
 
     Promise.all([
         User.findOne({ username: username }),
@@ -223,7 +221,7 @@ router.get(
     }
 );
 
-// @route   POST /search/:username
+// @route   POST /search/
 // @desc    Search for a user by username
 // @access  Private
 router.post(
@@ -236,10 +234,9 @@ router.post(
             });
             return;
         }
-        const query = req.body.search.replace(
-            /[-[\]{}()*+?.,\\^$|#\s]/g,
-            '\\$&'
-        );
+        const query = req.body.search
+            .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
+            .toLowerCase();
         User.find({ username: query }).then(users => {
             if (!users || users.length < 1) {
                 res.status(404).json({ noUsers: 'No users found' });
@@ -451,6 +448,7 @@ router.get(
             participants: req.user.id,
             pending: true
         })
+            .populate('to')
             .populate('from')
             .then(requests => {
                 if (!requests || requests.length < 1) {
@@ -464,7 +462,9 @@ router.get(
                         return {
                             id: request._id,
                             from: request.from.username,
+                            fromId: request.from._id,
                             to: request.to.username,
+                            toId: request.to._id,
                             incoming: request.to._id.toString() === req.user.id
                         };
                     })
@@ -518,10 +518,15 @@ router.post(
                                         .execPopulate()
                                         .then(populatedRequest => {
                                             res.json({
-                                                _id: populatedRequest._id,
-                                                username:
-                                                    populatedRequest.from
-                                                        .username
+                                                id: populatedRequest._id,
+                                                user: {
+                                                    id:
+                                                        populatedRequest.from
+                                                            ._id,
+                                                    username:
+                                                        populated.from.username
+                                                },
+                                                accepted: true
                                             });
                                         });
                                 })
@@ -556,8 +561,9 @@ router.post(
                                     .then(populatedRequest => {
                                         res.json({
                                             id: populatedRequest._id,
-                                            username:
-                                                populatedRequest.to.username
+                                            to: populatedRequest.to.username,
+                                            from: req.user.username,
+                                            incoming: false
                                         });
                                     });
                             })
@@ -609,7 +615,8 @@ router.post(
             request
                 .save()
                 .then(acceptedRequest => {
-                    res.json(acceptedRequest.from._id.toString());
+                    res.json(acceptedRequest._id);
+                    console.log(acceptedRequest._id);
                     return;
                 })
                 .catch(err => {
@@ -666,9 +673,12 @@ router.delete(
     '/unfriend/:user_id',
     passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        // to-do
-        // sanitise user input (on all routes)
-
+        if (req.user.id === req.params.user_id) {
+            res.status(400).json({
+                no: 'no'
+            });
+            return;
+        }
         FriendRequest.findOneAndDelete({
             participants: { $all: [req.user.id, req.params.user_id] },
             accepted: true
@@ -683,7 +693,9 @@ router.delete(
                 const friendIndex = request.participants
                     .map(user => user._id.toString())
                     .indexOf(req.params.user_id);
-                res.json(request.participants[friendIndex]._id);
+                const friendId = request.participants[friendIndex]._id;
+                res.json(friendId);
+                return;
             })
             .catch(err => {
                 res.status(500).json({ serverError: 'Something went wrong' });

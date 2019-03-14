@@ -1,7 +1,5 @@
 const router = require('express').Router();
-const mongoose = require('mongoose');
 const passport = require('passport');
-const keys = require('../../config/keys');
 
 const User = require('../../models/User');
 const ShoppingList = require('../../models/ShoppingList');
@@ -92,7 +90,7 @@ router.post(
                 newItem.quantity = req.body.quantity;
             }
 
-            list.items.unshift(newItem);
+            list.items.push(newItem);
 
             list.save()
                 .then(list => res.json(list))
@@ -322,18 +320,21 @@ router.patch(
 
             if (list.author.toString() !== req.user.id) {
                 res.status(401).json({
-                    unauthorised: 'You do not have permission to add a user'
+                    unauthorised:
+                        'You do not have permission to add a user to this list'
                 });
                 return;
             }
 
             if (
-                !list.contributors
-                    .map(contributor => contributor.id.toString())
-                    .indexOf(req.params.user_id) < 0
+                !(
+                    list.contributors
+                        .map(contributor => contributor.id.toString())
+                        .indexOf(req.params.user_id) < 0
+                )
             ) {
                 res.status(400).json({
-                    noUser: 'User already belongs to this list'
+                    alreadyBelongs: 'User already belongs to this list'
                 });
                 return;
             }
@@ -387,25 +388,32 @@ router.patch(
                 return;
             }
 
-            if (list.author.toString() !== req.user.id) {
+            if (
+                list.author.toString() !== req.user.id &&
+                req.params.user_id !== req.user.id &&
+                req.params.user_id !== list.author.toString()
+            ) {
                 res.status(401).json({
-                    unauthorised: 'You do not have permission to remove a user'
+                    unauthorised:
+                        'You do not have permission to remove this user'
                 });
                 return;
             }
 
-            if (
-                list.contributors
-                    .map(contributor => contributor.id.toString())
-                    .indexOf(req.params.user_id) < 0
-            ) {
+            const indexOfUserToRemove = list.contributors
+                .map(user => user.id.toString())
+                .indexOf(req.params.user_id);
+            console.log(indexOfUserToRemove);
+
+            if (indexOfUserToRemove < 0) {
                 res.status(404).json({
                     noUser: 'No user with that id belongs to this list'
                 });
                 return;
             }
 
-            list.contributors.pull();
+            list.contributors[indexOfUserToRemove].remove();
+
             list.save()
                 .then(list => res.json(list))
                 .catch(err => {
