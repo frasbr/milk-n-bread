@@ -136,7 +136,7 @@ class Friend extends Component {
     };
 
     rejectFriend = () => {
-        this.props.rejectFriendRequest(this.props.id);
+        this.props.rejectFriendRequest(this.props.request);
     };
 
     render() {

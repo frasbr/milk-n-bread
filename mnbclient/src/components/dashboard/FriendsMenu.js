@@ -225,6 +225,7 @@ class FriendsMenu extends Component {
                                 username={request.from}
                                 id={request.fromId}
                                 key={request.id}
+                                request={request.id}
                             />
                         ))}
 
