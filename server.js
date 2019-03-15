@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const passport = require('passport');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
+const path = require('path');
 
 // Import routes
 const users = require('./routes/api/users');
@@ -44,6 +45,17 @@ require('./config/passport')(passport);
 // Use routes
 app.use('/api/users', users);
 app.use('/api/lists', lists);
+
+// Serve static assets if in production
+if (process.env.NODE_ENV === 'production') {
+    // Set static folder
+    app.use(express.static('mnbclient/build'));
+    app.get('*', (req, res) => {
+        res.sendFile(
+            path.resolve(__direname, 'mnbclient', 'build', 'index.html')
+        );
+    });
+}
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server running on port ${port}`));

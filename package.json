@@ -8,14 +8,15 @@
         "start": "node server.js",
         "server": "nodemon server.js",
         "client": "npm start --prefix mnbclient",
-        "dev": "concurrently \"npm run server\" \"npm run client\""
+        "dev": "concurrently \"npm run server\" \"npm run client\"",
+        "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix mnbclient && npm run build --prefix mnbclient"
     },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/frasbr/shopping-list.git"
     },
     "author": "frasbr",
-    "license": "ISC",
+    "license": "MIT",
     "bugs": {
         "url": "https://github.com/frasbr/shopping-list/issues"
     },
