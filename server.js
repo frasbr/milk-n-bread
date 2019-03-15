@@ -52,7 +52,7 @@ if (process.env.NODE_ENV === 'production') {
     app.use(express.static('mnbclient/build'));
     app.get('*', (req, res) => {
         res.sendFile(
-            path.resolve(__direname, 'mnbclient', 'build', 'index.html')
+            path.resolve(__dirname, 'mnbclient', 'build', 'index.html')
         );
     });
 }
